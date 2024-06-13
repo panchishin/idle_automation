@@ -1,0 +1,21 @@
+{
+  "name": "EvolveAutomate",
+  "version": "0.0.1",
+  "manifest_version": 2,
+  "description": "Automate Evolve Idle",
+  "background": {
+    "scripts": [
+      "background.js"
+    ],
+    "persistent": true
+  },
+  "browser_action": {
+    "default_title": "AUTO"
+  },
+  "permissions": [
+    "https://pmotschmann.github.io/Evolve/",
+    "http://pmotschmann.github.io/Evolve/",
+    "tabs"
+  ]
+}
+
