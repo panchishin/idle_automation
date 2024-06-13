@@ -1,38 +1,5 @@
 let allListeners = []; // {'button':button, 'id':parentid, 'listener': listener}
-
-
-function removeHookForAllParentIds() {
-    allListeners.forEach(({button, listener}) => {
-        button.removeEventListener('click', listener);
-    });
-
-    allListeners = [];
-}
-
-
-function addHookForAllParentIds(callback) {
-    // Get all elements with the class "button"
-    const buttons = document.querySelectorAll('.action.vb>.is-dark.button');
-
-    // Loop through each button and add an onClick event
-    buttons.forEach(button => {
-      const parentid = button.parentNode.id;
-      const listener = () => {
-        // Find the parent element of the button
-        callback(parentid);
-      };
-      // Add the event listener to the button
-      button.addEventListener('click', listener);
-      allListeners.push({'button':button, 'id':parentid, 'listener': listener});
-    });
-}
-
-
-function refreshHooks(callback) {
-    removeHookForAllParentIds();
-    addHookForAllParentIds(callback);
-}
-
+let selectedIds = [];
 
 // Create the control panel
 function createControlPanelElement() {
@@ -56,9 +23,58 @@ function createControlPanelElement() {
     return controlPanel;
 }
 
+const controlPanel = createControlPanelElement();
+const controlPanelText = document.createElement('div');
+
+
+function removeHookForAllParentIds() {
+    allListeners.forEach(({button, listener}) => {
+        button.removeEventListener('click', listener);
+    });
+
+    allListeners = [];
+}
+
+function updateControlPanel() {
+    if (controlPanel.style.height === '40rem') {
+        controlPanel.innerHTML = '';
+        controlPanel.appendChild(controlPanelText);
+        controlPanel.appendChild(createButtonList());
+    }
+}
+
+function addHookForAllParentIds() {
+    // Get all elements with the class "button"
+    const buttons = document.querySelectorAll('.action.vb>.is-dark.button');
+
+    // Loop through each button and add an onClick event
+    buttons.forEach(button => {
+      const id = button.parentNode.id;
+      const listener = () => {
+        // if id in selectedIds, remove it, else add it
+        if (selectedIds.includes(id)) {
+            // selectedIds = selectedIds.filter((value) => value !== id);
+        } else {
+            selectedIds.push(id);
+        }
+        updateControlPanel();
+      };
+      // Add the event listener to the button
+      button.addEventListener('click', listener);
+      allListeners.push({'button':button, 'id':id, 'listener': listener});
+    });
+}
+
+
+function refreshHooks() {
+    removeHookForAllParentIds();
+    addHookForAllParentIds();
+}
+
+
+
 // Create a list of button ids that will be displayed in the control panel
 function createButtonList() {
-    const buttonTextArray = allListeners.map((button) => button.id);
     const buttonList = document.createElement('div');
     
     buttonList.style.listStyleType = 'none';
@@ -68,7 +84,7 @@ function createButtonList() {
     buttonList.style.height = '100%';
     buttonList.style.width = '100%';
     buttonList.style.overflow = 'auto';
-    buttonTextArray.forEach((text) => {
+    selectedIds.forEach((text) => {
         const listItem = document.createElement('div');
         listItem.innerText = text;
         listItem.style.padding = '.25rem';
@@ -77,6 +93,10 @@ function createButtonList() {
         listItem.style.display = 'inline-block';
         listItem.style.minWidth = '10rem';
         buttonList.appendChild(listItem);
+        listItem.addEventListener('click', () => {
+            selectedIds = selectedIds.filter((value) => value !== text);
+            updateControlPanel();
+        });
     });
     return buttonList;
 }
@@ -86,15 +106,13 @@ function createControlPanel() {
     // by default it will collapsed showing only the text [Control Panel]
     // when clicked it will expand showing the control panel which for now will a list of all the buttons in the 'allListeners' array
 
-    const controlPanel = createControlPanelElement();    
     document.body.appendChild(controlPanel);
 
-    const controlPanelText = document.createElement('div');
     controlPanelText.innerHTML = 'Control Panel (expand)';
     controlPanel.appendChild(controlPanelText);
 
-
     controlPanelText.addEventListener('click', () => {
+        refreshHooks();
         if (controlPanel.style.height === '40rem') {
             controlPanel.style.height = '3rem';
             controlPanel.style.width = '20rem';
@@ -109,18 +127,27 @@ function createControlPanel() {
         }
     });
 
+    const timer = setInterval(autoClick, 2000);
+
+}
+
+function autoClick() {
+    // this function finds all the elements on the page that have an id that is in the selectedIds array
+    // then picks one at random and clicks it
+    let buttons = selectedIds.map(id => document.querySelector('#' + id + '.action.vb:not(.cna)>.is-dark.button'))
+    // filter out the nulls
+    buttons = buttons.filter(button => button !== null);
+    // click a random button
+    if (buttons.length > 0) {
+        const button = buttons[Math.floor(Math.random()*buttons.length)];
+        console.log(button)
+        button.click();
+    }
 }
 
 
 (function() {
-
-    // Add a hook to all buttons to update the control panel
-    refreshHooks((parentId) => {
-        console.log(parentId);
-    });
-
     // Create the control panel
     createControlPanel();
-
 })();
 
